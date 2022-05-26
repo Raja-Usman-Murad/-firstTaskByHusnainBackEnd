@@ -8,6 +8,7 @@ router.get("/", (req, res) => {
 
 router.post("/register", async (req, res) => {
     const { name, email, phone, work, password, cpassword } = req.body;
+    console.log(name,email,phone,work,password,cpassword)
     if (!name || !email || !phone || !work || !password || !cpassword) {
       return res.status(422).json({ error: "plz fill all the fields" });
     }
@@ -25,6 +26,30 @@ router.post("/register", async (req, res) => {
       }
     } catch (error) {
       console.log(error);
+    }
+  });
+
+  router.post("/signin", async (req, res) => {
+    const { email, password } = req.body;
+    console.log(req.body);
+    if (!email || !password) {
+      return res.status(422).json({ error: "plz fill all the fields" });
+    }
+    try {
+      const emailAuth = await User.findOne({ email: email });
+      if (emailAuth) {
+        const isMatch = await User.findOne({ password: password });
+        console.log(isMatch);
+        if (!isMatch) {
+          res.status(400).json({ error: "invalid credentials pass" });
+        } else {
+          res.status(200).json({ msg: "user signin successfull" });
+        }
+      } else {
+        res.status(400).json({ error: "invalid credentials email" });
+      }
+    } catch (error) {
+      console.log(error, "email and password fields empty");
     }
   });
 
