@@ -1,14 +1,13 @@
 const express = require("express"); //for routing its require
 const router = express.Router(); //routing
 const User = require("../model/userSchema");
-
+const authenticate = require("../middleware/authenticate"); //for contact middleware authentication
 router.get("/", (req, res) => {
     res.send("WELCOME TO HOME PAGE");
   });
 
 router.post("/register", async (req, res) => {
     const { name, email, phone, work, password, cpassword } = req.body;
-    console.log(name,email,phone,work,password,cpassword)
     if (!name || !email || !phone || !work || !password || !cpassword) {
       return res.status(422).json({ error: "plz fill all the fields" });
     }
@@ -31,7 +30,6 @@ router.post("/register", async (req, res) => {
 
   router.post("/signin", async (req, res) => {
     const { email, password } = req.body;
-    console.log(req.body);
     if (!email || !password) {
       return res.status(422).json({ error: "plz fill all the fields" });
     }
@@ -39,7 +37,11 @@ router.post("/register", async (req, res) => {
       const emailAuth = await User.findOne({ email: email });
       if (emailAuth) {
         const isMatch = await User.findOne({ password: password });
-        console.log(isMatch);
+        const token = await emailAuth.generateWebToken();
+        res.cookie("mytoken", token, {
+          expires: new Date(Date.now() + 25892000000),
+          httpOnly: true,
+        });
         if (!isMatch) {
           res.status(400).json({ error: "invalid credentials pass" });
         } else {
@@ -53,5 +55,9 @@ router.post("/register", async (req, res) => {
     }
   });
 
+  router.get("/list", authenticate, async (req, res) => {
+    // res.send("WELCOME TO list PAGE");
+    res.send(req.rootUser);
+  });
 
   module.exports = router;
