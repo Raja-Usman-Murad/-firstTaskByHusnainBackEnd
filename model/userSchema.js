@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     email: {
       type: String,
       required: true,
+      unique:true,
     },
     phone: {
       type: Number,
@@ -39,14 +40,19 @@ const userSchema = new mongoose.Schema({
 // GENERATING WEB TOKEN
 userSchema.methods.generateWebToken = async function () {
   try {
-    let token = jwt.sign({ _id: this._id }, "rajausmanmuradkiyaniilovemyselfverymuch");
-    this.tokens = this.tokens.concat({ token: token });
-    await this.save();
+    const data = {
+      user:{
+        id:this._id
+      }
+    }
+    let token = jwt.sign(data, "rajausmanmuradkiyaniilovemyselfverymuch");
+    // this.tokens = this.tokens.concat({ token: token });
+    // await this.save();
     return token;
   } catch (error) {
     console.log(error);
   }
 };
 
-const User = mongoose.model("USER", userSchema);
+const User = mongoose.model("user", userSchema);
 module.exports = User;
