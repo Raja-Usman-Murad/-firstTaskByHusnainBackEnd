@@ -1,6 +1,7 @@
 const mongoose = require("mongoose"); //for creating mschema and model
 const jwt = require("jsonwebtoken"); //for producing token
 const bcrypt = require("bcryptjs"); //for hashing password
+const crypto = require("crypto"); //for hashing token its built-in
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -41,6 +42,13 @@ const userSchema = new mongoose.Schema({
     },
   },
   passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // WE ARE HASHING THE PASSWORD
@@ -96,6 +104,21 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 
+//Generate the random reset token
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  console.log({ resetToken }, this.passwordResetToken);
+
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
 //findOneAndUpdate, save , update, updateOne,  schem(pre) ? , this.isModified ?? only passwrod update per usy convert kysy krna a ??
 
 const User = mongoose.model("User", userSchema);

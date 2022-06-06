@@ -34,7 +34,6 @@ const Authenticate = async (req, res, next) => {
 
     //3) if User Still Exist
     const currentUser = await User.findById(verifyToken.user.id);
-    console.log(currentUser);
     if (!currentUser) {
       return res.status(401).json({
         status: "fail",
