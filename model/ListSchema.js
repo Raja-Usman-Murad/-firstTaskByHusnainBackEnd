@@ -7,15 +7,15 @@ const listSchema = new mongoose.Schema({
   },
   date: {
     type: String,
-    required: true,
+    required: [true, "must have date"],
   },
   title: {
     type: String,
-    required: true,
+    required: [true, "must have title"],
   },
   description: {
     type: String,
-    required: true,
+    required: [true, "must have description"],
   },
 });
 

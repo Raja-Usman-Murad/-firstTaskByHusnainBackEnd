@@ -1,5 +1,4 @@
 const User = require("../model/UserSchema");
-const bcrypt = require("bcryptjs"); //for compare bcrypt password
 
 exports.registerUser = async (req, res) => {
   const { name, email, phone, work, password, cpassword } = req.body;
@@ -8,8 +7,10 @@ exports.registerUser = async (req, res) => {
       .status(422)
       .json({ status: "fail", message: "plz fill all the fields" });
   }
+
   try {
     const userExist = await User.findOne({ email: email });
+
     if (userExist) {
       return res
         .status(422)
@@ -20,8 +21,13 @@ exports.registerUser = async (req, res) => {
         .json({ status: "fail", message: "p doesnot match" });
     } else {
       const user = new User({ name, email, phone, work, password, cpassword });
+
+      // generate webToken //generateWebToken is instance in userSchema
       const authToken = await user.generateWebToken();
+
+      // here the PASSWORD hasing occur automaticall on pre save middleware
       const user2 = await user.save();
+
       return res.status(201).json({
         message: "user register successfully",
         authToken,
@@ -43,21 +49,27 @@ exports.registerUser = async (req, res) => {
 exports.signInUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
       return res
         .status(422)
         .json({ status: "fail", message: "plz fill all the fields" });
     }
 
-    const findEmail = await User.findOne({
+    const user = await User.findOne({
       email: email,
     }).select("+password");
-    if (!findEmail || !(await bcrypt.compare(password, findEmail.password))) {
+
+    // PASSWORD HASH (correctPassword instance method on User Schema)
+    if (!user || !(await user.correctPassword(password, user.password))) {
       return res
         .status(401)
         .json({ message: "inValid Credentials", success: "fail" });
     }
-    const authToken = await findEmail.generateWebToken();
+
+    // generate webToken //generateWebToken is instance in userSchema
+    const authToken = await user.generateWebToken();
+
     return res
       .status(200)
       .json({ msg: "user signin successfull", authToken, success: true });
@@ -73,9 +85,11 @@ exports.signInUser = async (req, res) => {
 exports.getUser = async (req, res) => {
   try {
     const userId = req.user.id; //req.userId
+
     // const user = await User.findById(userId, {
     //   //purpose (the purpose of func here is to get the full document of that user)
     // }).select("-password");
+
     const user = await User.findById(userId);
 
     if (!user) {

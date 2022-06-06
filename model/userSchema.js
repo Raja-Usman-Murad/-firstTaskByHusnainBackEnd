@@ -1,47 +1,46 @@
 const mongoose = require("mongoose"); //for creating mschema and model
 const jwt = require("jsonwebtoken"); //for producing token
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs"); //for hashing password
 
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, "must have username"],
     trim: true,
   },
   email: {
     type: String,
-    required: true,
+    required: [true, "must have email"],
     unique: true,
     trim: true,
   },
   phone: {
     type: Number,
-    required: true,
-    trim: true,
+    required: [true, "must have phoneNumber"],
   },
   work: {
     type: String,
-    required: true,
+    required: [true, "must have work"],
     trim: true,
   },
   password: {
     type: String,
-    required: true,
+    required: [true, "Please provide a password"],
     select: false,
     //hashing
   },
   cpassword: {
     type: String,
-    required: true,
-    select: false,
-  },
-  tokens: [
-    {
-      token: {
-        type: String,
+    required: [true, "Please confirm your password"],
+    validate: {
+      // This only works on CREATE and SAVE!!!
+      validator: function (el) {
+        return el === this.password;
       },
+      message: "Passwords are not the same!",
     },
-  ],
+  },
+  passwordChangedAt: Date,
 });
 
 // WE ARE HASHING THE PASSWORD
@@ -74,6 +73,27 @@ userSchema.methods.generateWebToken = async function () {
   } catch (error) {
     console.log(error);
   }
+};
+
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+// Check if user changed password after the token was issued
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+
+    return JWTTimestamp < changedTimestamp;
+  }
+
+  // False means NOT changed
+  return false;
 };
 
 //findOneAndUpdate, save , update, updateOne,  schem(pre) ? , this.isModified ?? only passwrod update per usy convert kysy krna a ??
