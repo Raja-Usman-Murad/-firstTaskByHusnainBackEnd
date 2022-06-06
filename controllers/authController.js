@@ -2,6 +2,34 @@ const User = require("../model/UserSchema");
 const sendEmail = require("../utils/email");
 const crypto = require("crypto"); //for hashing token its built-in
 
+const createSendToken = async (user, statusCode, res) => {
+  const authToken = await user.generateWebToken();
+  console.log(authToken);
+  console.log(process.env.JWT_COOKIE_EXPIRES_IN);
+
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+  };
+
+  if (process.env.NODE_ENV === "production") cookieOptions.secure = true;
+
+  res.cookie("jwt", authToken, cookieOptions);
+
+  // Remove password from output
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: "success",
+    authToken,
+    data: {
+      user,
+    },
+  });
+};
+
 exports.registerUser = async (req, res) => {
   const { name, email, phone, work, password, cpassword } = req.body;
   if (!name || !email || !phone || !work || !password || !cpassword) {
@@ -22,22 +50,18 @@ exports.registerUser = async (req, res) => {
         .status(422)
         .json({ status: "fail", message: "p doesnot match" });
     } else {
-      const user = new User({ name, email, phone, work, password, cpassword });
+      const user = await User.create({
+        name,
+        email,
+        phone,
+        work,
+        password,
+        cpassword,
+      });
+      // here the PASSWORD hasing occur automaticall on pre save middleware
 
       // generate webToken //generateWebToken is instance in userSchema
-      const authToken = await user.generateWebToken();
-
-      // here the PASSWORD hasing occur automaticall on pre save middleware
-      const user2 = await user.save();
-
-      return res.status(201).json({
-        message: "user register successfully",
-        authToken,
-        success: "success",
-        data: {
-          user: user2,
-        },
-      });
+      createSendToken(user, 201, res);
     }
   } catch (error) {
     console.log(error);
@@ -70,11 +94,7 @@ exports.signInUser = async (req, res) => {
     }
 
     // generate webToken //generateWebToken is instance in userSchema
-    const authToken = await user.generateWebToken();
-
-    return res
-      .status(200)
-      .json({ msg: "user signin successfull", authToken, success: true });
+    createSendToken(user, 201, res);
   } catch (error) {
     console.log(error, "inValid Credentials");
     return res.status(401).json({
@@ -211,12 +231,5 @@ exports.resetPassword = async (req, res) => {
 
   // 3) Update changedPasswordAt property for the user
   // 4) Log the user in, send JWT
-  const authToken = await user.generateWebToken();
-  res.status(200).json({
-    status: "success",
-    authToken,
-    data: {
-      user,
-    },
-  });
+  createSendToken(user, 200, res);
 };
