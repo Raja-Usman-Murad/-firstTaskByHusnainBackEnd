@@ -30,7 +30,6 @@ exports.addList = async (req, res) => {
     const { date, title, description } = req.body;
     const list = new List({ date, title, description, user: req.user.id });
     const saveList = await list.save();
-    console.log(saveList);
     return res.status(201).json({
       status: "success",
       message: "list add successfully",

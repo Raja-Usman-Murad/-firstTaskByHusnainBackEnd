@@ -12,14 +12,20 @@ router.post("/signin", authController.signInUser);
 //  getuser localhost:5000/getuser
 router.get("/getuser", authenticate, authController.getUser);
 
-//  getuser localhost:5000/getAllUser
+//  getAllUsers localhost:5000/getAllUser
 router.get("/getAllUsers", authController.getAllUsers);
+
+// updateUser localhost:5000/updateUser
+router.patch("/updateUser", authenticate, authController.updateUser);
+
+// updatePassword localhost:5000/updatePassword
+router.patch("/updatePassword", authenticate, authController.updatePassword);
 
 // forgetPassword localhost:5000/forgotPassword
 router.post("/forgotPassword", authController.forgotPassword);
 
 // resetPassword localhost:5000/resetPassword
-router.patch("/resetPassword/:token", authController.resetPassword);
+router.patch("/resetPassword/:resetId", authController.resetPassword);
 
 // deleteUser localhost:5000/deleteUser
 router.delete("/deleteUser", authenticate, authController.deleteUser);

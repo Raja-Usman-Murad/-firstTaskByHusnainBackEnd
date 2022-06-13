@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../model/UserSchema");
 
 const Authenticate = async (req, res, next) => {
+  console.log("Authenticate file");
   try {
     //1) Getting the token and check if its here
 

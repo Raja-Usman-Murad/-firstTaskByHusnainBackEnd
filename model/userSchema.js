@@ -15,6 +15,9 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  photo: {
+    type: String,
+  },
   phone: {
     type: Number,
     required: [true, "must have phoneNumber"],
@@ -61,6 +64,13 @@ userSchema.pre("save", async function (next) {
   //now delete the confirm password field because our password has been hashed
   this.cpassword = undefined;
   // this.cpassword = await bcrypt.hash(this.cpassword, 12);
+  next();
+});
+
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
@@ -112,9 +122,6 @@ userSchema.methods.createPasswordResetToken = function () {
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-
-  console.log({ resetToken }, this.passwordResetToken);
-
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 
   return resetToken;
